@@ -23,16 +23,16 @@ namespace MimicAPI.GameAPI
             return dict?.Values.ToList() ?? new List<VPlayer>();
         }
 
-        public static List<VPlayer> FindAlivePlayersInRoom(IVroom? room)
+        public static List<VPlayer> GetAlivePlayersInRoom(IVroom? room)
         {
             var players = GetAllVPlayersInRoom(room);
             return players.Where(p => p != null && p.IsAliveStatus()).ToList();
         }
 
-        public static List<VPlayer> FindPlayersInRoomByName(IVroom? room, string name)
+        public static List<VPlayer> GetDeadPlayersInRoom(IVroom? room)
         {
             var players = GetAllVPlayersInRoom(room);
-            return players.Where(p => p != null).ToList();
+            return players.Where(p => p != null && !p.IsAliveStatus()).ToList();
         }
 
         public static List<VActor> GetAllVActorsInRoom(IVroom? room)
@@ -51,22 +51,44 @@ namespace MimicAPI.GameAPI
             return dict != null && dict.ContainsKey(actorID) ? dict[actorID] : null;
         }
 
-        public static List<VActor> FindMonstersInRoom(IVroom? room)
+        public static List<VActor> GetMonstersInRoom(IVroom? room)
         {
             var actors = GetAllVActorsInRoom(room);
             return actors.Where(a => a != null && a is VMonster).Cast<VActor>().ToList();
         }
 
-        public static List<VActor> FindAliveMonstersInRoom(IVroom? room)
+        public static List<VActor> GetAliveMonstersInRoom(IVroom? room)
         {
-            var monsters = FindMonstersInRoom(room);
+            var monsters = GetMonstersInRoom(room);
             return monsters.Where(m => m != null && m.IsAliveStatus()).ToList();
         }
 
-        public static List<VActor> FindLootingObjectsInRoom(IVroom? room)
+        public static List<VActor> GetDeadMonstersInRoom(IVroom? room)
+        {
+            var monsters = GetMonstersInRoom(room);
+            return monsters.Where(m => m != null && !m.IsAliveStatus()).ToList();
+        }
+
+        public static List<VActor> GetLootingObjectsInRoom(IVroom? room)
         {
             var actors = GetAllVActorsInRoom(room);
             return actors.Where(a => a != null && a is VLootingObject).Cast<VActor>().ToList();
+        }
+
+        public static List<VActor> GetActorsByType<T>(IVroom? room) where T : VActor
+        {
+            var actors = GetAllVActorsInRoom(room);
+            return actors.Where(a => a != null && a is T).Cast<VActor>().ToList();
+        }
+
+        public static bool HasAliveMonstersInRoom(IVroom? room)
+        {
+            return GetAliveMonstersInRoom(room).Any();
+        }
+
+        public static bool HasAlivePlayersInRoom(IVroom? room)
+        {
+            return GetAlivePlayersInRoom(room).Any();
         }
     }
 }

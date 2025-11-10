@@ -8,8 +8,7 @@ namespace MimicAPI.GameAPI
 {
     public static class ManagerAPI
     {
-        public static T? GetManager<T>(string fieldName)
-            where T : class
+        public static T? GetManager<T>(string fieldName) where T : class
         {
             Hub? hub = CoreAPI.GetHub();
             return hub != null ? ReflectionHelper.GetFieldValue<T>(hub, fieldName) : null;
@@ -63,6 +62,11 @@ namespace MimicAPI.GameAPI
         public static APIRequestHandler? GetAPIHandler()
         {
             return GetManager<APIRequestHandler>("apihandler");
+        }
+
+        public static bool IsManagerAvailable<T>(string fieldName) where T : class
+        {
+            return GetManager<T>(fieldName) != null;
         }
     }
 }
