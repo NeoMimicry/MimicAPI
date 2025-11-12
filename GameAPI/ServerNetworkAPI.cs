@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
 
 namespace MimicAPI.GameAPI
 {
@@ -18,8 +18,7 @@ namespace MimicAPI.GameAPI
 
             try
             {
-                var assembly = AppDomain.CurrentDomain.GetAssemblies()
-                    .FirstOrDefault(a => a.GetName().Name.Contains("FishySteamworks"));
+                var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.Contains("FishySteamworks"));
 
                 if (assembly == null)
                     return null;
@@ -244,8 +243,7 @@ namespace MimicAPI.GameAPI
             if (type == null)
                 return new MethodBase[0];
 
-            return type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .Where(m => !m.IsAbstract && m.DeclaringType == type);
+            return type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(m => !m.IsAbstract && m.DeclaringType == type);
         }
 
         public static MethodInfo? GetVRoomManagerMethod(string methodName)
@@ -300,6 +298,58 @@ namespace MimicAPI.GameAPI
             return uiType.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         }
 
+        public static MethodBase? GetServerSocketMethod(string methodName)
+        {
+            var assembly = GetServerAssembly();
+            if (assembly == null)
+                return null;
+
+            var serverSocketType = assembly.GetTypes().FirstOrDefault(t => t.Name == "ServerSocket");
+            if (serverSocketType == null)
+                return null;
+
+            return serverSocketType.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        }
+
+        public static MethodBase? GetServerMethod(string typeName, string methodName)
+        {
+            var assembly = GetServerAssembly();
+            if (assembly == null)
+                return null;
+
+            var type = assembly.GetTypes().FirstOrDefault(t => t.Name == typeName);
+            if (type == null)
+                return null;
+
+            return type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        }
+
+        public static MethodBase? GetIVroomMethod(string methodName)
+        {
+            var csharpAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Assembly-CSharp");
+            if (csharpAssembly == null)
+                return null;
+
+            var ivroomType = csharpAssembly.GetType("IVroom");
+            if (ivroomType == null)
+                return null;
+
+            return ivroomType.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        }
+
+        public static MethodBase? GetAssemblyMethod(string assemblyName, string typeName, string methodName)
+        {
+            var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == assemblyName);
+            if (assembly == null)
+                return null;
+
+            var type = assembly.GetType(typeName);
+            if (type == null)
+                return null;
+
+            return type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        }
+
         public static Type? GetMsgErrorCodeType()
         {
             var assembly = GetServerAssembly();
@@ -320,7 +370,14 @@ namespace MimicAPI.GameAPI
 
         private static Assembly? GetServerAssembly()
         {
-            return typeof(FishySteamworks.Server.ServerSocket).Assembly;
+            try
+            {
+                return AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.Contains("FishySteamworks"));
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

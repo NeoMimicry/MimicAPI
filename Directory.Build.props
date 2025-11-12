@@ -2,8 +2,8 @@
 <Project>
     <PropertyGroup>
         <!-- Game paths -->
-        <GamePath>C:\Users\Administrator\Downloads\Files\MIMESIS-SteamRIP.com\MIMESIS</GamePath>
-        <GameAssemblyPath>$(GamePath)\MIMESIS_Data\Managed</GameAssemblyPath>
+        <GamePath>C:\Program Files (x86)\Steam\steamapps\common\MIMESIS</GamePath>
+        <GameAssemblyPath>$(GamePath)\Mimesis_Data\Managed</GameAssemblyPath>
         <BepInExAssemblyPath>$(GamePath)\MelonLoader\net6</BepInExAssemblyPath>
         <PluginsPath>$(GamePath)\Mods</PluginsPath>
     </PropertyGroup>
