@@ -107,25 +107,6 @@ namespace MimicAPI.GameAPI
             return null;
         }
 
-        public static int GetWaitingRoomMemberCount()
-        {
-            object? waitingRoom = GetWaitingRoom();
-            if (waitingRoom == null)
-                return 0;
-
-            object? result = ReflectionHelper.InvokeMethod(waitingRoom, "GetMemberCount");
-            return result is int intValue ? intValue : 0;
-        }
-
-        public static int GetWaitingRoomMaxPlayers()
-        {
-            object? waitingRoom = GetWaitingRoom();
-            if (waitingRoom == null)
-                return 0;
-
-            return ReflectionHelper.GetFieldValue<int>(waitingRoom, "_maxPlayers");
-        }
-
         public static object? GetMaintenanceRoom()
         {
             var roomManager = GetVRoomManager();
@@ -147,6 +128,25 @@ namespace MimicAPI.GameAPI
             }
 
             return null;
+        }
+
+        public static int GetWaitingRoomMemberCount()
+        {
+            object? waitingRoom = GetWaitingRoom();
+            if (waitingRoom == null)
+                return 0;
+
+            object? result = ReflectionHelper.InvokeMethod(waitingRoom, "GetMemberCount");
+            return result is int intValue ? intValue : 0;
+        }
+
+        public static int GetWaitingRoomMaxPlayers()
+        {
+            object? waitingRoom = GetWaitingRoom();
+            if (waitingRoom == null)
+                return 0;
+
+            return ReflectionHelper.GetFieldValue<int>(waitingRoom, "_maxPlayers");
         }
 
         public static int GetMaintenanceRoomMemberCount()
@@ -220,155 +220,58 @@ namespace MimicAPI.GameAPI
             return result;
         }
 
-        public static FieldInfo? GetMaximumClientsField()
-        {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return null;
-
-            var serverSocketType = assembly.GetTypes().FirstOrDefault(t => t.Name == "ServerSocket");
-            if (serverSocketType == null)
-                return null;
-
-            return serverSocketType.GetField("_maximumClients", BindingFlags.NonPublic | BindingFlags.Instance);
-        }
-
-        public static IEnumerable<MethodBase> GetAllServerSocketMethods()
-        {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return new MethodBase[0];
-
-            var type = assembly.GetTypes().FirstOrDefault(t => t.Name == "ServerSocket");
-            if (type == null)
-                return new MethodBase[0];
-
-            return type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(m => !m.IsAbstract && m.DeclaringType == type);
-        }
-
-        public static MethodInfo? GetVRoomManagerMethod(string methodName)
-        {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return null;
-
-            var vroomManagerType = assembly.GetTypes().FirstOrDefault(t => t.Name == "VRoomManager");
-            if (vroomManagerType == null)
-                return null;
-
-            return vroomManagerType.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-        }
-
-        public static MethodInfo? GetRoomMethod(string roomTypeName, string methodName)
-        {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return null;
-
-            var roomType = assembly.GetTypes().FirstOrDefault(t => t.Name == roomTypeName);
-            if (roomType == null)
-                return null;
-
-            return roomType.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-        }
-
-        public static MethodInfo? GetSteamInviteMethod(string methodName)
-        {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return null;
-
-            var steamInviteType = assembly.GetTypes().FirstOrDefault(t => t.Name == "SteamInviteDispatcher");
-            if (steamInviteType == null)
-                return null;
-
-            return steamInviteType.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-        }
-
-        public static MethodInfo? GetUIMethod(string uiTypeName, string methodName)
-        {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return null;
-
-            var uiType = assembly.GetTypes().FirstOrDefault(t => t.Name == uiTypeName);
-            if (uiType == null)
-                return null;
-
-            return uiType.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-        }
-
-        public static MethodBase? GetServerSocketMethod(string methodName)
-        {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return null;
-
-            var serverSocketType = assembly.GetTypes().FirstOrDefault(t => t.Name == "ServerSocket");
-            if (serverSocketType == null)
-                return null;
-
-            return serverSocketType.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        }
-
-        public static MethodBase? GetServerMethod(string typeName, string methodName)
-        {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return null;
-
-            var type = assembly.GetTypes().FirstOrDefault(t => t.Name == typeName);
-            if (type == null)
-                return null;
-
-            return type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-        }
-
-        public static MethodBase? GetIVroomMethod(string methodName)
-        {
-            var csharpAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Assembly-CSharp");
-            if (csharpAssembly == null)
-                return null;
-
-            var ivroomType = csharpAssembly.GetType("IVroom");
-            if (ivroomType == null)
-                return null;
-
-            return ivroomType.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        }
-
-        public static MethodBase? GetAssemblyMethod(string assemblyName, string typeName, string methodName)
-        {
-            var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == assemblyName);
-            if (assembly == null)
-                return null;
-
-            var type = assembly.GetType(typeName);
-            if (type == null)
-                return null;
-
-            return type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-        }
-
         public static Type? GetMsgErrorCodeType()
         {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return null;
+            try
+            {
+                var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.Contains("FishySteamworks"));
+                if (assembly == null)
+                    return null;
 
-            return assembly.GetTypes().FirstOrDefault(t => t.Name == "MsgErrorCode");
+                return assembly.GetTypes().FirstOrDefault(t => t.Name == "MsgErrorCode");
+            }
+            catch
+            {
+                return null;
+            }
         }
 
-        public static int GetRoomMemberCount(object room)
+        public static object? CreateErrorCodeEnum(string value)
+        {
+            var msgErrorCodeType = GetMsgErrorCodeType();
+            if (msgErrorCodeType == null || !msgErrorCodeType.IsEnum)
+                return null;
+
+            return Enum.Parse(msgErrorCodeType, value);
+        }
+
+        public static void SetRoomMaxPlayers(object? room, int maxPlayers)
+        {
+            if (room == null)
+                return;
+            ReflectionHelper.SetFieldValue(room, "_maxPlayers", maxPlayers);
+        }
+
+        public static int GetRoomPlayerCount(object? room)
         {
             if (room == null)
                 return 0;
 
-            object? result = ReflectionHelper.InvokeMethod(room, "GetMemberCount");
-            return result is int intValue ? intValue : 0;
+            var vPlayerDict = ReflectionHelper.GetFieldValue(room, "_vPlayerDict");
+            if (vPlayerDict is IDictionary dict)
+                return dict.Count;
+
+            return 0;
         }
 
-        private static Assembly? GetServerAssembly()
+        public static IDictionary? GetRoomPlayerDictionary(object? room)
+        {
+            if (room == null)
+                return null;
+            return ReflectionHelper.GetFieldValue(room, "_vPlayerDict") as IDictionary;
+        }
+
+        public static Assembly? GetServerAssembly()
         {
             try
             {
@@ -378,6 +281,26 @@ namespace MimicAPI.GameAPI
             {
                 return null;
             }
+        }
+
+        public static Assembly? GetGameAssembly()
+        {
+            try
+            {
+                return AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Assembly-CSharp");
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static Type? GetServerSocketType()
+        {
+            var assembly = GetServerAssembly();
+            if (assembly == null)
+                return null;
+            return assembly.GetTypes().FirstOrDefault(t => t.Name == "ServerSocket");
         }
     }
 }

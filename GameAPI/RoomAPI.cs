@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Mimic.Actors;
 
@@ -113,7 +114,8 @@ namespace MimicAPI.GameAPI
             return ids;
         }
 
-        public static IVroom[] GetAllRoomsOfType<T>() where T : IVroom
+        public static IVroom[] GetAllRoomsOfType<T>()
+            where T : IVroom
         {
             return GetAllRooms().Where(r => r is T).ToArray();
         }
@@ -156,6 +158,20 @@ namespace MimicAPI.GameAPI
             if (room == null)
                 return "Unknown";
             return room.GetType().Name;
+        }
+
+        public static int GetRoomPlayerCount(object? room)
+        {
+            if (room == null)
+                return 0;
+            return ServerNetworkAPI.GetRoomPlayerCount(room);
+        }
+
+        public static IDictionary? GetRoomPlayerDictionary(object? room)
+        {
+            if (room == null)
+                return null;
+            return ServerNetworkAPI.GetRoomPlayerDictionary(room);
         }
 
         private static IDictionary? GetRoomDictionary()
