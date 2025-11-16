@@ -1,6 +1,6 @@
 {
     "name": "MimicAPI",
-    "version_number": "0.1.1",
+    "version_number": "0.1.2",
     "website_url": "https://github.com/NeoMimicry/MimicAPI",
     "description": "a api!.",
     "dependencies": [
