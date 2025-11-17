@@ -1,0 +1,69 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Build MimicAPI
+        run: |
+          dotnet build -c Release
+
+      - name: Create release package
+        run: |
+          mkdir -p release
+
+          # Copy MimicAPI.dll with error handling
+          MIMICDLL=$(find . -name "MimicAPI.dll" -path "*/bin/Release/*" | head -1)
+          [ -z "$MIMICDLL" ] && echo "Error: MimicAPI.dll not found" && exit 1
+          cp "$MIMICDLL" release/
+
+          # Copy metadata files
+          cp thunderstore/manifest.json release/
+          cp thunderstore/README.md release/
+          cp thunderstore/icon.png release/
+
+      - name: Create zip archive
+        run: |
+          cd release
+          zip -r ../MimicAPI-${{ github.ref_name }}.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: MimicAPI-${{ github.ref_name }}.zip
+          body: |
+            ## MimicAPI Release
+
+            This release includes the compiled `MimicAPI.dll` library.
+
+            ### Installation
+            1. Download `MimicAPI-${{ github.ref_name }}.zip`
+            2. Extract `MimicAPI.dll` to your MIMESIS `Mods` directory
+            3. Launch the game
+
+            ### What's MimicAPI?
+            MimicAPI provides helper utilities and APIs for MIMESIS mod development, including:
+            - Reflection helpers for easier type manipulation
+            - Game API wrappers (Server, Room, Player, etc.)
+            - Common utilities for mod developers
+
+            ### Dependencies
+            - MelonLoader 0.7.1 or higher
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
