@@ -64,6 +64,11 @@ namespace MimicAPI.GameAPI
             return GetManager<APIRequestHandler>("apihandler");
         }
 
+        public static L10NManager? GetLocalisationManager()
+        {
+            return GetManager<L10NManager>("lcman");
+        }
+
         public static bool IsManagerAvailable<T>(string fieldName) where T : class
         {
             return GetManager<T>(fieldName) != null;
