@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ github.ref_name }}
+      version: ${{ steps.extract-version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -22,6 +22,12 @@ jobs:
           repository: ${{ github.repository_owner }}/Mimesis-Workspace
           path: Workspace
           ssh-key: ${{ secrets.WORKSPACE_TOKEN }}
+      - name: Extract version (remove v prefix)
+        id: extract-version
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -41,16 +47,16 @@ jobs:
             cp -r thunderstore/* release/ 2>/dev/null || true
             # Update version in manifest.json if it exists
             if [ -f "release/manifest.json" ]; then
-              sed -i "s/\"version_number\": \".*\"/\"version_number\": \"${{ github.ref_name }}\"/" release/manifest.json
+              sed -i "s/\"version_number\": \".*\"/\"version_number\": \"${{ steps.extract-version.outputs.version }}\"/" release/manifest.json
             fi
           fi
       - name: Create release ZIP
-        run: zip -j "MimicAPI_${{ github.ref_name }}.zip" release/*
+        run: zip -j "MimicAPI_${{ steps.extract-version.outputs.version }}.zip" release/*
       - name: Upload Release ZIP
         uses: actions/upload-artifact@v4
         with:
           name: MimicAPI
-          path: "MimicAPI_${{ github.ref_name }}.zip"
+          path: "MimicAPI_${{ steps.extract-version.outputs.version }}.zip"
   release:
     needs: build
     runs-on: ubuntu-latest
