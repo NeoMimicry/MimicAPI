@@ -129,9 +129,7 @@ namespace MimicAPI.GameAPI
             if (players == null)
                 return new List<ProtoActor>();
 
-            return players
-                .Where(p => p != null && IsPlayerValid(p) && IsPlayerAlive(p) && Vector3.Distance(p.transform.position, searchCenter) <= range)
-                .ToList();
+            return players.Where(p => p != null && IsPlayerValid(p) && IsPlayerAlive(p) && Vector3.Distance(p.transform.position, searchCenter) <= range).ToList();
         }
 
         public static ProtoActor? GetNearestPlayer(Vector3? center = null)
@@ -141,10 +139,7 @@ namespace MimicAPI.GameAPI
             if (players == null || players.Length == 0)
                 return null;
 
-            return players
-                .Where(p => p != null && IsPlayerValid(p))
-                .OrderBy(p => Vector3.Distance(p.transform.position, searchCenter))
-                .FirstOrDefault();
+            return players.Where(p => p != null && IsPlayerValid(p)).OrderBy(p => Vector3.Distance(p.transform.position, searchCenter)).FirstOrDefault();
         }
 
         public static ProtoActor? GetNearestAlivePlayer(Vector3? center = null)
@@ -154,10 +149,7 @@ namespace MimicAPI.GameAPI
             if (players == null || players.Length == 0)
                 return null;
 
-            return players
-                .Where(p => p != null && IsPlayerValid(p) && IsPlayerAlive(p))
-                .OrderBy(p => Vector3.Distance(p.transform.position, searchCenter))
-                .FirstOrDefault();
+            return players.Where(p => p != null && IsPlayerValid(p) && IsPlayerAlive(p)).OrderBy(p => Vector3.Distance(p.transform.position, searchCenter)).FirstOrDefault();
         }
 
         public static List<ProtoActor> GetPlayersInRange(float range, Vector3? center = null)
@@ -167,9 +159,7 @@ namespace MimicAPI.GameAPI
             if (players == null)
                 return new List<ProtoActor>();
 
-            return players
-                .Where(p => p != null && IsPlayerValid(p) && Vector3.Distance(p.transform.position, searchCenter) <= range)
-                .ToList();
+            return players.Where(p => p != null && IsPlayerValid(p) && Vector3.Distance(p.transform.position, searchCenter) <= range).ToList();
         }
 
         public static string GetPlayerName(ProtoActor? actor)

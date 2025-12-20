@@ -10,6 +10,8 @@ namespace MimicAPI.GameAPI
     {
         private static object? _serverSocket = null;
         private static Type? _serverSocketType = null;
+        private static Type? _ivroomType = null;
+        private static Type? _gameSessionInfoType = null;
 
         public static object? GetServerSocket()
         {
@@ -62,6 +64,53 @@ namespace MimicAPI.GameAPI
             if (serverSocket == null)
                 return;
             ReflectionHelper.SetFieldValue(serverSocket, "_maximumClients", value);
+        }
+
+        public static Type? GetIVroomType()
+        {
+            if (_ivroomType != null)
+                return _ivroomType;
+
+            var assembly = GetGameAssembly();
+            _ivroomType = assembly?.GetType("IVroom");
+            return _ivroomType;
+        }
+
+        public static Type? GetGameSessionInfoType()
+        {
+            if (_gameSessionInfoType != null)
+                return _gameSessionInfoType;
+
+            var assembly = GetGameAssembly();
+            _gameSessionInfoType = assembly?.GetType("GameSessionInfo");
+            return _gameSessionInfoType;
+        }
+
+        public static MethodBase? GetIVroomCanEnterChannel()
+        {
+            var ivroomType = GetIVroomType();
+            return ivroomType?.GetMethod("CanEnterChannel", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+        }
+
+        public static MethodBase? GetGameSessionInfoAddPlayerSteamID()
+        {
+            var type = GetGameSessionInfoType();
+            return type?.GetMethod("AddPlayerSteamID", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+        }
+
+        public static bool IsPlayerInRoom(object room, long playerUID)
+        {
+            var vPlayerDict = GetRoomPlayerDictionary(room);
+            if (vPlayerDict == null)
+                return false;
+
+            foreach (var player in vPlayerDict.Values)
+            {
+                var uid = ReflectionHelper.GetPropertyValue<long>(player, "UID");
+                if (uid == playerUID)
+                    return true;
+            }
+            return false;
         }
 
         public static int GetCurrentClientCount()

@@ -75,7 +75,8 @@ namespace MimicAPI.GameAPI
             return method.Invoke(null, parameters.Length > 0 ? parameters : null);
         }
 
-        public static T? InvokeMethod<T>(object target, string methodName, params object[] parameters) where T : class
+        public static T? InvokeMethod<T>(object target, string methodName, params object[] parameters)
+            where T : class
         {
             object? result = InvokeMethod(target, methodName, parameters);
             if (result == null)
@@ -83,7 +84,8 @@ namespace MimicAPI.GameAPI
             return (T)result;
         }
 
-        public static T? InvokeMethod<T>(Type type, string methodName, params object[] parameters) where T : class
+        public static T? InvokeMethod<T>(Type type, string methodName, params object[] parameters)
+            where T : class
         {
             object? result = InvokeMethod(type, methodName, parameters);
             if (result == null)

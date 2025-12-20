@@ -75,7 +75,8 @@ namespace MimicAPI.GameAPI
             return actors.Where(a => a != null && a is VLootingObject).Cast<VActor>().ToList();
         }
 
-        public static List<VActor> GetActorsByType<T>(IVroom? room) where T : VActor
+        public static List<VActor> GetActorsByType<T>(IVroom? room)
+            where T : VActor
         {
             var actors = GetAllVActorsInRoom(room);
             return actors.Where(a => a != null && a is T).Cast<VActor>().ToList();

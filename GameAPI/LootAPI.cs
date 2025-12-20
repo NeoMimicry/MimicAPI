@@ -40,9 +40,7 @@ namespace MimicAPI.GameAPI
             if (allLoot.Length == 0)
                 return null;
 
-            return allLoot
-                .OrderBy(l => Vector3.Distance(l.transform.position, center))
-                .FirstOrDefault();
+            return allLoot.OrderBy(l => Vector3.Distance(l.transform.position, center)).FirstOrDefault();
         }
 
         public static LootingLevelObject? GetNearestLootInRange(float maxDistance, Vector3? searchCenter = null)
@@ -89,9 +87,7 @@ namespace MimicAPI.GameAPI
 
         private static LootingLevelObject[] FilterLoot(Func<LootingLevelObject, bool> predicate)
         {
-            return UnityEngine.Object.FindObjectsByType<LootingLevelObject>(UnityEngine.FindObjectsSortMode.None)
-                .Where(l => l != null && predicate(l))
-                .ToArray();
+            return UnityEngine.Object.FindObjectsByType<LootingLevelObject>(UnityEngine.FindObjectsSortMode.None).Where(l => l != null && predicate(l)).ToArray();
         }
     }
 }
