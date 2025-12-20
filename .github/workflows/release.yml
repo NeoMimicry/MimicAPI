@@ -89,9 +89,9 @@ jobs:
         with:
           token: ${{ secrets.THUNDERSTORE_TOKEN }}
           community: mimesis
-          namespace: Rxflex
+          namespace: NeoMimicry
           name: MimicAPI
-          description: Remove 4-player limit and support up to 999 players
+          description: a API!
           version: ${{ needs.build.outputs.version }}
           repo: mimesis.thunderstore.io
           path: thunderstore-package
