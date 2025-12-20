@@ -1,69 +1,99 @@
-name: Build and Release
-
+name: Build and Release on Tag
 on:
   push:
     tags:
-      - 'v*'
-
+      - "*.*"
+permissions:
+  contents: write
+  packages: write
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ github.ref_name }}
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup .NET
+        with:
+          fetch-depth: 0
+      - name: Checkout Workspace repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/Mimesis-Workspace
+          path: Workspace
+          ssh-key: ${{ secrets.WORKSPACE_TOKEN }}
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0.x'
-
-      - name: Build MimicAPI
-        run: |
-          dotnet build -c Release
-
-      - name: Create release package
+          dotnet-version: "8.0.x"
+      - name: Build the project
+        run: >
+          dotnet build "MimicAPI.csproj" --configuration Release
+          /p:WorkspaceLibPath="${{ github.workspace }}/Workspace/lib"
+          /p:GameManagedPath="${{ github.workspace }}/Workspace/lib/game"
+          /p:GameAssemblyPath="${{ github.workspace }}/Workspace/lib/game"
+          /p:MelonLoaderPath="${{ github.workspace }}/Workspace/lib/melonloader"
+      - name: Prepare release directory
         run: |
           mkdir -p release
-
-          # Copy MimicAPI.dll with error handling
-          MIMICDLL=$(find . -name "MimicAPI.dll" -path "*/bin/Release/*" | head -1)
-          [ -z "$MIMICDLL" ] && echo "Error: MimicAPI.dll not found" && exit 1
-          cp "$MIMICDLL" release/
-
-          # Copy metadata files
-          cp thunderstore/manifest.json release/
-          cp thunderstore/README.md release/
-          cp thunderstore/icon.png release/
-
-      - name: Create zip archive
-        run: |
-          cd release
-          zip -r ../MimicAPI-${{ github.ref_name }}.zip .
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+          cp bin/Release/netstandard2.1/MimicAPI.dll release/
+          if [ -d "thunderstore" ]; then
+            cp -r thunderstore/* release/ 2>/dev/null || true
+            # Update version in manifest.json if it exists
+            if [ -f "release/manifest.json" ]; then
+              sed -i "s/\"version_number\": \".*\"/\"version_number\": \"${{ github.ref_name }}\"/" release/manifest.json
+            fi
+          fi
+      - name: Create release ZIP
+        run: zip -j "MimicAPI_${{ github.ref_name }}.zip" release/*
+      - name: Upload Release ZIP
+        uses: actions/upload-artifact@v4
         with:
-          files: MimicAPI-${{ github.ref_name }}.zip
-          body: |
-            ## MimicAPI Release
-
-            This release includes the compiled `MimicAPI.dll` library.
-
-            ### Installation
-            1. Download `MimicAPI-${{ github.ref_name }}.zip`
-            2. Extract `MimicAPI.dll` to your MIMESIS `Mods` directory
-            3. Launch the game
-
-            ### What's MimicAPI?
-            MimicAPI provides helper utilities and APIs for MIMESIS mod development, including:
-            - Reflection helpers for easier type manipulation
-            - Game API wrappers (Server, Room, Player, etc.)
-            - Common utilities for mod developers
-
-            ### Dependencies
-            - MelonLoader 0.7.1 or higher
-          draft: false
-          prerelease: false
+          name: MimicAPI
+          path: "MimicAPI_${{ github.ref_name }}.zip"
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: MimicAPI
+      - name: Extract DLL from ZIP
+        run: |
+          mkdir -p release
+          unzip -q "MimicAPI_${{ needs.build.outputs.version }}.zip" -d release/
+          ls -la release/
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/MimicAPI.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  thunderstore:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Download built ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: MimicAPI
+      - name: Extract ZIP for Thunderstore
+        run: |
+          mkdir -p thunderstore-package
+          unzip -q "MimicAPI_${{ needs.build.outputs.version }}.zip" -d thunderstore-package/
+      - name: Upload to Thunderstore
+        uses: GreenTF/upload-thunderstore-package@v4.3
+        with:
+          token: ${{ secrets.THUNDERSTORE_TOKEN }}
+          community: mimesis
+          namespace: Rxflex
+          name: MimicAPI
+          description: Remove 4-player limit and support up to 999 players
+          version: ${{ needs.build.outputs.version }}
+          repo: mimesis.thunderstore.io
+          path: thunderstore-package
+          categories: |
+            Mods
