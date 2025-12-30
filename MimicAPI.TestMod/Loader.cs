@@ -2,7 +2,7 @@ using MelonLoader;
 using MimicAPI.TestMod;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(Loader), "MimicAPI.TestMod", "1.0.0", "MimicAPI")]
+[assembly: MelonInfo(typeof(Loader), "MimicAPI.TestMod", "0.2.0", "MimicAPI")]
 [assembly: MelonGame("ReLUGames", "MIMESIS")]
 
 namespace MimicAPI.TestMod

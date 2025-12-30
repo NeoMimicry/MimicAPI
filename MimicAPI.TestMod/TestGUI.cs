@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Bifrost.ConstEnum;
 using MelonLoader;
 using MimicAPI.GameAPI;
 using shadcnui.GUIComponents.Core;
+using shadcnui.GUIComponents.Core.Base;
+using shadcnui.GUIComponents.Core.Styling;
 using shadcnui.GUIComponents.Layout;
 using UnityEngine;
 
@@ -67,8 +70,8 @@ namespace MimicAPI.TestMod
         {
             try
             {
-                guiHelper.UpdateAnimations(showWindow);
-                if (!guiHelper.BeginAnimatedGUI())
+                guiHelper.UpdateGUI(showWindow);
+                if (!guiHelper.BeginGUI())
                 {
                     GUI.DragWindow();
                     return;
@@ -81,9 +84,9 @@ namespace MimicAPI.TestMod
                     RunAllTests();
                 guiHelper.EndHorizontalGroup();
 
-                currentTab = guiHelper.DrawTabs(tabs.Select(t => t.Name).ToArray(), currentTab, DrawTabContent);
+                currentTab = guiHelper.Tabs(tabs.Select(t => t.Name).ToArray(), currentTab, DrawTabContent);
 
-                guiHelper.EndAnimatedGUI();
+                guiHelper.EndGUI();
             }
             catch (Exception ex)
             {
@@ -94,7 +97,7 @@ namespace MimicAPI.TestMod
 
         void DrawTabContent()
         {
-            scrollPosition = guiHelper.DrawScrollView(
+            scrollPosition = guiHelper.ScrollView(
                 scrollPosition,
                 () =>
                 {
