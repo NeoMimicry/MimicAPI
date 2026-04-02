@@ -34,7 +34,7 @@ jobs:
           dotnet-version: "8.0.x"
       - name: Build the project
         run: >
-          dotnet build "MimicAPI.csproj" --configuration Release
+          dotnet build "MimicAPI/MimicAPI.csproj" --configuration Release
           /p:WorkspaceLibPath="${{ github.workspace }}/Workspace/lib"
           /p:GameManagedPath="${{ github.workspace }}/Workspace/lib/game"
           /p:GameAssemblyPath="${{ github.workspace }}/Workspace/lib/game"
@@ -42,7 +42,7 @@ jobs:
       - name: Prepare release directory
         run: |
           mkdir -p release
-          cp bin/Release/netstandard2.1/MimicAPI.dll release/
+          cp MimicAPI/bin/Release/netstandard2.1/MimicAPI.dll release/
           if [ -d "thunderstore" ]; then
             cp -r thunderstore/* release/ 2>/dev/null || true
             # Update version in manifest.json if it exists
