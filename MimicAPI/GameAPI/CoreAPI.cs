@@ -18,13 +18,13 @@ namespace MimicAPI.GameAPI
         public static VWorld? GetVWorld()
         {
             Hub? hub = GetHub();
-            return hub == null ? null : ReflectionHelper.GetFieldValue<VWorld>(hub, "vworld");
+            return hub == null ? null : ReflectionHelper.GetFieldValue<VWorld>(hub, "<vworld>k__BackingField");
         }
 
         public static VRoomManager? GetVRoomManager()
         {
             VWorld? vworld = GetVWorld();
-            return vworld == null ? null : ReflectionHelper.GetFieldValue<VRoomManager>(vworld, "VRoomManager");
+            return vworld == null ? null : ReflectionHelper.GetFieldValue<VRoomManager>(vworld, "_vRoomManager");
         }
 
         public static Hub.PersistentData? GetPersistentData()

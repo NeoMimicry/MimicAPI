@@ -4,7 +4,11 @@
         <Nullable>enable</Nullable>
         <WarningLevel>4</WarningLevel>
         <NoWarn>$(NoWarn);MSB3277;MSB3270</NoWarn>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\MimicAPI\MimicAPI.csproj" />
+    </ItemGroup>
     <ItemGroup>
         <Reference Include="0Harmony">
             <HintPath>$(MelonLoaderPath)\0Harmony.dll</HintPath>
@@ -120,38 +124,8 @@
         <Reference Include="MemoryPack.Core">
             <HintPath>$(GameAssemblyPath)\MemoryPack.Core.dll</HintPath>
         </Reference>
-        <Reference Include="Microsoft.Extensions.Configuration">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.Configuration.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Extensions.Configuration.Abstractions">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.Configuration.Abstractions.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Extensions.Configuration.Binder">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.Configuration.Binder.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Extensions.DependencyInjection">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.DependencyInjection.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Extensions.Http">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.Http.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Extensions.Logging">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.Logging.dll</HintPath>
-        </Reference>
         <Reference Include="Microsoft.Extensions.Logging.Abstractions">
             <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Extensions.ObjectPool">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.ObjectPool.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Extensions.Options">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.Options.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Extensions.Primitives">
-            <HintPath>$(GameAssemblyPath)\Microsoft.Extensions.Primitives.dll</HintPath>
         </Reference>
         <Reference Include="Mono.Cecil">
             <HintPath>$(MelonLoaderPath)\Mono.Cecil.dll</HintPath>
@@ -180,12 +154,6 @@
         <Reference Include="Newtonsoft.Json">
             <HintPath>$(GameAssemblyPath)\Newtonsoft.Json.dll</HintPath>
         </Reference>
-        <Reference Include="NonConvexCollider">
-            <HintPath>$(GameAssemblyPath)\NonConvexCollider.dll</HintPath>
-        </Reference>
-        <Reference Include="NonConvexColliderRuntimeAPI">
-            <HintPath>$(GameAssemblyPath)\NonConvexColliderRuntimeAPI.dll</HintPath>
-        </Reference>
         <Reference Include="OccaSoftware.Buto.Demo">
             <HintPath>$(GameAssemblyPath)\OccaSoftware.Buto.Demo.dll</HintPath>
         </Reference>
@@ -195,20 +163,17 @@
         <Reference Include="OccaSoftware.Buto.Shaders">
             <HintPath>$(GameAssemblyPath)\OccaSoftware.Buto.Shaders.dll</HintPath>
         </Reference>
-        <Reference Include="prometheus-net.DotNetRuntime">
-            <HintPath>$(GameAssemblyPath)\prometheus-net.DotNetRuntime.dll</HintPath>
-        </Reference>
-        <Reference Include="Prometheus.NetStandard">
-            <HintPath>$(GameAssemblyPath)\Prometheus.NetStandard.dll</HintPath>
-        </Reference>
         <Reference Include="RTLTMPro">
             <HintPath>$(GameAssemblyPath)\RTLTMPro.dll</HintPath>
         </Reference>
-        <Reference Include="RuntimeTestAssembly">
-            <HintPath>$(GameAssemblyPath)\RuntimeTestAssembly.dll</HintPath>
-        </Reference>
         <Reference Include="sc.posteffects.runtime">
             <HintPath>$(GameAssemblyPath)\sc.posteffects.runtime.dll</HintPath>
+        </Reference>
+        <Reference Include="shadcnui">
+            <HintPath>$(PluginsPath)\shadcnui.dll</HintPath>
+        </Reference>
+        <Reference Include="MimicAPI">
+            <HintPath>$(PluginsPath)\MimicAPI.dll</HintPath>
         </Reference>
         <Reference Include="System.Collections.Immutable">
             <HintPath>$(GameAssemblyPath)\System.Collections.Immutable.dll</HintPath>
@@ -647,9 +612,6 @@
         </Reference>
         <Reference Include="VorbisPluginImpl">
             <HintPath>$(GameAssemblyPath)\VorbisPluginImpl.dll</HintPath>
-        </Reference>
-        <Reference Include="websocket-sharp">
-            <HintPath>$(GameAssemblyPath)\websocket-sharp.dll</HintPath>
         </Reference>
         <Reference Include="zxing.unity">
             <HintPath>$(GameAssemblyPath)\zxing.unity.dll</HintPath>
