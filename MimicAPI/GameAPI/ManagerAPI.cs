@@ -15,60 +15,27 @@ namespace MimicAPI.GameAPI
             return hub != null ? ReflectionHelper.GetFieldValue<T>(hub, fieldName) : null;
         }
 
-        public static DataManager? GetDataManager()
-        {
-            return GetManager<DataManager>("dataman");
-        }
+        public static DataManager? GetDataManager() => GetManager<DataManager>("<dataman>k__BackingField");
 
-        public static TimeUtil? GetTimeUtil()
-        {
-            return GetManager<TimeUtil>("timeutil");
-        }
+        public static TimeUtil? GetTimeUtil() => GetManager<TimeUtil>("<timeutil>k__BackingField");
 
-        public static NavManager? GetNavManager()
-        {
-            return GetManager<NavManager>("navman");
-        }
+        public static NavManager? GetNavManager() => GetManager<NavManager>("<navman>k__BackingField");
 
-        public static DynamicDataManager? GetDynamicDataManager()
-        {
-            return GetManager<DynamicDataManager>("dynamicDataMan");
-        }
+        public static DynamicDataManager? GetDynamicDataManager() => GetManager<DynamicDataManager>("<dynamicDataMan>k__BackingField");
 
-        public static UIManager? GetUIManager()
-        {
-            return GetManager<UIManager>("uiman");
-        }
+        public static UIManager? GetUIManager() => GetManager<UIManager>("<uiman>k__BackingField");
 
-        public static CameraManager? GetCameraManager()
-        {
-            return GetManager<CameraManager>("cameraman");
-        }
+        public static CameraManager? GetCameraManager() => GetManager<CameraManager>("<cameraman>k__BackingField");
 
-        public static AudioManager? GetAudioManager()
-        {
-            return GetManager<AudioManager>("audioman");
-        }
+        public static AudioManager? GetAudioManager() => GetManager<AudioManager>("<audioman>k__BackingField");
 
-        public static InputManager? GetInputManager()
-        {
-            return GetManager<InputManager>("inputman");
-        }
+        public static InputManager? GetInputManager() => GetManager<InputManager>("<inputman>k__BackingField");
 
-        public static NetworkManagerV2? GetNetworkManager()
-        {
-            return GetManager<NetworkManagerV2>("netman2");
-        }
+        public static NetworkManagerV2? GetNetworkManager() => GetManager<NetworkManagerV2>("<netman2>k__BackingField");
 
-        public static APIRequestHandler? GetAPIHandler()
-        {
-            return GetManager<APIRequestHandler>("apihandler");
-        }
+        public static APIRequestHandler? GetAPIHandler() => GetManager<APIRequestHandler>("<apihandler>k__BackingField");
 
-        public static L10NManager? GetLocalisationManager()
-        {
-            return GetManager<L10NManager>("lcman");
-        }
+        public static L10NManager? GetLocalisationManager() => GetManager<L10NManager>("lcman");
 
         public static bool IsManagerAvailable<T>(string fieldName)
             where T : class

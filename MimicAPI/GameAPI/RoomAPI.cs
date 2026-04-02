@@ -1,187 +1,135 @@
-﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using Mimic.Actors;
 
 namespace MimicAPI.GameAPI
 {
     public static class RoomAPI
     {
-        public static IVroom? GetRoom(long roomID)
+        private static IDictionary? GetRoomDictionary()
         {
-            IDictionary? roomDict = GetRoomDictionary();
-            if (roomDict == null)
+            var roomManager = CoreAPI.GetVRoomManager();
+            if (roomManager == null)
                 return null;
 
-            return roomDict[roomID] as IVroom;
+            return ReflectionHelper.GetFieldValue(roomManager, "_vrooms") as IDictionary;
         }
 
-        public static IVroom? GetCurrentRoom()
+        public static object? GetRoom(long roomID)
         {
-            ProtoActor? player = PlayerAPI.GetLocalPlayer();
-            if (player == null)
+            var rooms = GetRoomDictionary();
+            if (rooms == null)
                 return null;
 
-            IVroom[] rooms = GetAllRooms();
-            return rooms.FirstOrDefault(room => room != null && IsRoomPlayable(room));
-        }
-
-        public static IVroom[] GetAllRooms()
-        {
-            IDictionary? roomDict = GetRoomDictionary();
-            if (roomDict == null)
-                return new IVroom[0];
-
-            IVroom[] rooms = new IVroom[roomDict.Count];
-            int i = 0;
-            foreach (var room in roomDict.Values)
+            foreach (var key in rooms.Keys)
             {
-                rooms[i++] = (IVroom)room;
+                if (key is long id && id == roomID)
+                    return rooms[key];
             }
-            return rooms;
+            return null;
         }
 
-        public static List<IVroom> GetAllPlayableRooms()
+        public static object[] GetAllRooms()
         {
-            return GetAllRooms().Where(r => r != null && IsRoomPlayable(r)).ToList();
-        }
+            var rooms = GetRoomDictionary();
+            if (rooms == null)
+                return System.Array.Empty<object>();
 
-        public static long GetRoomID(IVroom? room)
-        {
-            return room == null ? 0 : ReflectionHelper.GetFieldValue<long>(room, "RoomID");
-        }
-
-        public static int GetRoomMasterID(IVroom? room)
-        {
-            return room == null ? 0 : ReflectionHelper.GetFieldValue<int>(room, "MasterID");
-        }
-
-        public static bool IsRoomPlayable(IVroom? room)
-        {
-            if (room == null)
-                return false;
-            return ReflectionHelper.InvokeMethod(room, "IsPlayable") is bool result && result;
-        }
-
-        public static int GetCurrentGameDay(IVroom? room)
-        {
-            return room == null ? 0 : ReflectionHelper.GetFieldValue<int>(room, "_currentDay");
-        }
-
-        public static int GetCurrentSessionCycle(IVroom? room)
-        {
-            return room == null ? 0 : ReflectionHelper.GetFieldValue<int>(room, "_currentSessionCount");
-        }
-
-        public static Dictionary<int, ILevelObjectInfo>? GetRoomLevelObjects(IVroom? room)
-        {
-            if (room == null)
-                return new Dictionary<int, ILevelObjectInfo>();
-            return ReflectionHelper.GetFieldValue<Dictionary<int, ILevelObjectInfo>>(room, "_levelObjects") ?? new Dictionary<int, ILevelObjectInfo>();
-        }
-
-        public static List<VPlayer> GetRoomPlayers(IVroom? room)
-        {
-            if (room == null)
-                return new List<VPlayer>();
-            var dict = ReflectionHelper.GetFieldValue<Dictionary<int, VPlayer>>(room, "_vPlayerDict");
-            return dict?.Values.ToList() ?? new List<VPlayer>();
-        }
-
-        public static List<VActor> GetRoomActors(IVroom? room)
-        {
-            if (room == null)
-                return new List<VActor>();
-            var dict = ReflectionHelper.GetFieldValue<Dictionary<int, VActor>>(room, "_vActorDict");
-            return dict?.Values.ToList() ?? new List<VActor>();
+            var result = new object[rooms.Count];
+            int i = 0;
+            foreach (var room in rooms.Values)
+                result[i++] = room;
+            return result;
         }
 
         public static List<long> GetAllRoomIDs()
         {
-            IDictionary? roomDict = GetRoomDictionary();
-            if (roomDict == null)
+            var rooms = GetRoomDictionary();
+            if (rooms == null)
                 return new List<long>();
 
             var ids = new List<long>();
-            foreach (var key in roomDict.Keys)
+            foreach (var key in rooms.Keys)
             {
-                if (key is long longKey)
-                    ids.Add(longKey);
+                if (key is long id)
+                    ids.Add(id);
             }
             return ids;
         }
 
-        public static IVroom[] GetAllRoomsOfType<T>()
-            where T : IVroom
+        public static bool RoomExists(long roomID) => GetRoom(roomID) != null;
+
+        public static object? GetCurrentRoom()
         {
-            return GetAllRooms().Where(r => r is T).ToArray();
+            return GetAllRooms().FirstOrDefault(r => r != null && IsRoomPlayable(r));
         }
 
-        public static bool RoomExists(long roomID)
-        {
-            return GetRoom(roomID) != null;
-        }
+        public static List<object> GetAllPlayableRooms() => GetAllRooms().Where(r => r != null && IsRoomPlayable(r)).ToList();
 
-        public static int GetRoomMaxPlayers(IVroom? room)
-        {
-            if (room == null)
-                return 0;
-            return ReflectionHelper.GetFieldValue<int>(room, "_maxPlayers");
-        }
+        public static long GetRoomID(object? room) => room == null ? 0L : ReflectionHelper.GetFieldValue<long>(room, "RoomID");
 
-        public static int GetRoomMaxPlayers(object? room)
-        {
-            if (room == null)
-                return 0;
-            return ReflectionHelper.GetFieldValue<int>(room, "_maxPlayers");
-        }
+        public static int GetRoomMasterID(object? room) => room == null ? 0 : ReflectionHelper.GetFieldValue<int>(room, "MasterID");
 
-        public static void SetRoomMaxPlayers(IVroom? room, int maxPlayers)
-        {
-            if (room == null)
-                return;
-            ReflectionHelper.SetFieldValue(room, "_maxPlayers", maxPlayers);
-        }
+        public static string GetRoomName(object? room) => room == null ? "Unknown" : room.GetType().Name;
 
-        public static void SetRoomMaxPlayers(object? room, int maxPlayers)
-        {
-            if (room == null)
-                return;
-            ReflectionHelper.SetFieldValue(room, "_maxPlayers", maxPlayers);
-        }
+        public static object? GetRoomType(object? room) => room == null ? null : ReflectionHelper.InvokeMethod(room, "GetToMoveRoomType");
 
-        public static string GetRoomName(IVroom? room)
+        public static object? GetRoomProperty(object? room) => room == null ? null : ReflectionHelper.InvokeMethod(room, "GetProperty");
+
+        public static bool IsRoomPlayable(object? room) => room != null && ReflectionHelper.InvokeMethod(room, "IsPlayable") is bool b && b;
+
+        public static int GetCurrentGameDay(object? room) => room == null ? 0 : ReflectionHelper.GetFieldValue<int>(room, "_currentDay");
+
+        public static int GetCurrentSessionCycle(object? room) => room == null ? 0 : ReflectionHelper.GetFieldValue<int>(room, "_currentSessionCount");
+
+        public static long GetCurrentTick(object? room) => room == null ? 0L : ReflectionHelper.GetFieldValue<long>(room, "_currentTick");
+
+        public static bool IsAllPlayerDead(object? room) => room != null && ReflectionHelper.InvokeMethod(room, "IsAllPlayerDead") is bool b && b;
+
+        public static bool IsAllPlayerWastedOrDead(object? room) => room != null && ReflectionHelper.InvokeMethod(room, "IsAllPlayerWastedOrDead") is bool b && b;
+
+        public static int GetDeadPlayerCount(object? room) => room == null ? 0 : (ReflectionHelper.InvokeMethod(room, "GetDeadPlayerCount") is int n ? n : 0);
+
+        public static int GetMemberCount(object? room) => room == null ? 0 : (ReflectionHelper.InvokeMethod(room, "GetMemberCount") is int n ? n : 0);
+
+        public static List<object> GetRoomPlayers(object? room)
         {
             if (room == null)
-                return "Unknown";
-            return room.GetType().Name;
+                return new List<object>();
+
+            var dict = ReflectionHelper.GetFieldValue(room, "_vPlayerDict") as IDictionary;
+            if (dict == null)
+                return new List<object>();
+
+            return dict.Values.Cast<object>().ToList();
         }
 
-        public static int GetRoomPlayerCount(object? room)
+        public static List<object> GetRoomActors(object? room)
         {
             if (room == null)
-                return 0;
-            return ServerNetworkAPI.GetRoomPlayerCount(room);
+                return new List<object>();
+
+            var dict = ReflectionHelper.GetFieldValue(room, "_vActorDict") as IDictionary;
+            if (dict == null)
+                return new List<object>();
+
+            return dict.Values.Cast<object>().ToList();
         }
 
-        public static IDictionary? GetRoomPlayerDictionary(object? room)
+        public static IDictionary? GetRoomLevelObjects(object? room)
         {
             if (room == null)
                 return null;
-            return ServerNetworkAPI.GetRoomPlayerDictionary(room);
+
+            return ReflectionHelper.GetFieldValue(room, "_levelObjects") as IDictionary;
         }
 
-        private static IDictionary? GetRoomDictionary()
-        {
-            VRoomManager? roomManager = CoreAPI.GetVRoomManager();
-            if (roomManager == null)
-                return null;
+        public static int GetRoomCurrency(object? room) => room == null ? 0 : ReflectionHelper.GetFieldValue<int>(room, "<Currency>k__BackingField");
 
-            object? roomDict = ReflectionHelper.GetFieldValue(roomManager, "_roomDict");
-            return roomDict as IDictionary;
-        }
+        public static long GetContaRecoveryRate(object? room) => room == null ? 0L : (ReflectionHelper.InvokeMethod(room, "GetContaRecoveryRate") is long v ? v : 0L);
+
+        public static int GetRoomPlayerCount(object? room) => room == null ? 0 : ServerNetworkAPI.GetRoomPlayerCount(room);
+
+        public static IDictionary? GetRoomPlayerDictionary(object? room) => room == null ? null : ServerNetworkAPI.GetRoomPlayerDictionary(room);
     }
 }

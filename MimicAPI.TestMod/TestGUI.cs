@@ -18,7 +18,7 @@ namespace MimicAPI.TestMod
         private Rect windowRect = new Rect(20, 20, 1200, 700);
         private Vector2 scrollPosition;
         private int currentTab;
-        private Tabs.TabConfig[] tabs;
+        private TabConfig[] tabs;
         private bool showWindow = true;
 
         private Dictionary<string, bool> toggleStates = new Dictionary<string, bool>();
@@ -30,16 +30,16 @@ namespace MimicAPI.TestMod
             try
             {
                 guiHelper = new GUIHelper();
-                tabs = new Tabs.TabConfig[]
+                tabs = new TabConfig[]
                 {
-                    new Tabs.TabConfig("Core", DrawCoreTab),
-                    new Tabs.TabConfig("Managers", DrawManagersTab),
-                    new Tabs.TabConfig("Player", DrawPlayerTab),
-                    new Tabs.TabConfig("Room", DrawRoomTab),
-                    new Tabs.TabConfig("Actor", DrawActorTab),
-                    new Tabs.TabConfig("Loot", DrawLootTab),
-                    new Tabs.TabConfig("Network", DrawNetworkTab),
-                    new Tabs.TabConfig("Tests", DrawTestsTab),
+                    new TabConfig("Core", DrawCoreTab),
+                    new TabConfig("Managers", DrawManagersTab),
+                    new TabConfig("Player", DrawPlayerTab),
+                    new TabConfig("Room", DrawRoomTab),
+                    new TabConfig("Actor", DrawActorTab),
+                    new TabConfig("Loot", DrawLootTab),
+                    new TabConfig("Network", DrawNetworkTab),
+                    new TabConfig("Tests", DrawTestsTab),
                 };
                 MelonLogger.Msg("TestGUI initialized");
             }
@@ -300,13 +300,31 @@ namespace MimicAPI.TestMod
                     {
                         guiHelper.MutedLabel($"Room ID: {RoomAPI.GetRoomID(room)}");
                         guiHelper.MutedLabel($"Master ID: {RoomAPI.GetRoomMasterID(room)}");
+                        guiHelper.MutedLabel($"Room Type: {RoomAPI.GetRoomType(room)}");
                         guiHelper.MutedLabel($"Game Day: {RoomAPI.GetCurrentGameDay(room)}");
                         guiHelper.MutedLabel($"Session Cycle: {RoomAPI.GetCurrentSessionCycle(room)}");
+                        guiHelper.MutedLabel($"Current Tick: {RoomAPI.GetCurrentTick(room)}");
+                        guiHelper.MutedLabel($"Members: {RoomAPI.GetMemberCount(room)}");
+                        guiHelper.MutedLabel($"Dead Players: {RoomAPI.GetDeadPlayerCount(room)}");
+                        guiHelper.MutedLabel($"Currency: {RoomAPI.GetRoomCurrency(room)}");
+                        guiHelper.MutedLabel($"Conta Recovery Rate: {RoomAPI.GetContaRecoveryRate(room)}");
 
                         guiHelper.BeginHorizontalGroup();
                         guiHelper.Label("Playable:");
                         guiHelper.Badge(RoomAPI.IsRoomPlayable(room) ? "Yes" : "No", RoomAPI.IsRoomPlayable(room) ? ControlVariant.Default : ControlVariant.Secondary);
                         guiHelper.EndHorizontalGroup();
+
+                        guiHelper.BeginHorizontalGroup();
+                        guiHelper.Label("All Dead:");
+                        guiHelper.Badge(RoomAPI.IsAllPlayerDead(room) ? "Yes" : "No", RoomAPI.IsAllPlayerDead(room) ? ControlVariant.Destructive : ControlVariant.Default);
+                        guiHelper.EndHorizontalGroup();
+
+                        var prop = RoomAPI.GetRoomProperty(room);
+                        if (prop != null)
+                        {
+                            guiHelper.MutedLabel($"Property SessionID: {ReflectionHelper.GetFieldValue<long>(prop, "SessionID")}");
+                            guiHelper.MutedLabel($"Property TargetCurrency: {ReflectionHelper.GetFieldValue<int>(prop, "<TargetCurrency>k__BackingField")}");
+                        }
                     }
                 }
             );
@@ -321,18 +339,24 @@ namespace MimicAPI.TestMod
                     var playableRooms = RoomAPI.GetAllPlayableRooms();
                     guiHelper.Label($"Playable Rooms: {playableRooms.Count}");
 
+                    var roomIDs = RoomAPI.GetAllRoomIDs();
+                    guiHelper.MutedLabel($"Room IDs: {string.Join(", ", roomIDs)}");
+
                     if (rooms.Length > 0)
                     {
-                        string[] headers = { "Name", "ID", "Playable", "Players" };
-                        string[,] data = new string[Math.Min(rooms.Length, 10), 4];
+                        string[] headers = { "Type", "Name", "ID", "Playable", "Members", "Players", "Actors" };
+                        string[,] data = new string[Math.Min(rooms.Length, 10), 7];
 
                         for (int i = 0; i < Math.Min(rooms.Length, 10); i++)
                         {
                             var r = rooms[i];
-                            data[i, 0] = RoomAPI.GetRoomName(r);
-                            data[i, 1] = RoomAPI.GetRoomID(r).ToString();
-                            data[i, 2] = RoomAPI.IsRoomPlayable(r) ? "Yes" : "No";
-                            data[i, 3] = RoomAPI.GetRoomPlayers(r).Count.ToString();
+                            data[i, 0] = RoomAPI.GetRoomType(r)?.ToString() ?? "?";
+                            data[i, 1] = RoomAPI.GetRoomName(r);
+                            data[i, 2] = RoomAPI.GetRoomID(r).ToString();
+                            data[i, 3] = RoomAPI.IsRoomPlayable(r) ? "Yes" : "No";
+                            data[i, 4] = RoomAPI.GetMemberCount(r).ToString();
+                            data[i, 5] = RoomAPI.GetRoomPlayers(r).Count.ToString();
+                            data[i, 6] = RoomAPI.GetRoomActors(r).Count.ToString();
                         }
 
                         guiHelper.Table(headers, data, ControlVariant.Secondary);
@@ -341,28 +365,22 @@ namespace MimicAPI.TestMod
             );
 
             DrawSection(
-                "Room Settings",
+                "Room Lookup",
                 () =>
                 {
-                    var room = RoomAPI.GetCurrentRoom();
-                    if (room != null)
+                    var ids = RoomAPI.GetAllRoomIDs();
+                    if (ids.Count > 0)
                     {
-                        int roomMaxPlayers = RoomAPI.GetRoomMaxPlayers(room);
-                        guiHelper.Label($"Current Max Players: {roomMaxPlayers}");
+                        long firstID = ids[0];
+                        bool exists = RoomAPI.RoomExists(firstID);
+                        guiHelper.MutedLabel($"RoomExists({firstID}): {exists}");
 
-                        if (!sliderStates.ContainsKey("roomMaxPlayers"))
-                            sliderStates["roomMaxPlayers"] = roomMaxPlayers;
-                        sliderStates["roomMaxPlayers"] = guiHelper.LabeledSlider("New Max Players", sliderStates["roomMaxPlayers"], 1f, 20f, 1f, true);
-
-                        if (guiHelper.Button("Set Max Players"))
-                        {
-                            RoomAPI.SetRoomMaxPlayers(room, (int)sliderStates["roomMaxPlayers"]);
-                            guiHelper.ShowSuccessToast("Room", $"Max players set to {(int)sliderStates["roomMaxPlayers"]}");
-                        }
+                        var found = RoomAPI.GetRoom(firstID);
+                        guiHelper.MutedLabel($"GetRoom({firstID}): {(found != null ? RoomAPI.GetRoomName(found) : "null")}");
                     }
                     else
                     {
-                        guiHelper.MutedLabel("No room available to configure");
+                        guiHelper.MutedLabel("No rooms to look up");
                     }
                 }
             );
@@ -389,9 +407,9 @@ namespace MimicAPI.TestMod
                         for (int i = 0; i < Math.Min(actors.Count, 10); i++)
                         {
                             var a = actors[i];
-                            data[i, 0] = a?.GetType().Name ?? "Unknown";
-                            data[i, 1] = a?.ObjectID.ToString() ?? "N/A";
-                            data[i, 2] = a?.IsAliveStatus() == true ? "Yes" : "No";
+                            data[i, 0] = a.GetType().Name;
+                            data[i, 1] = ReflectionHelper.GetFieldValue<int>(a, "ObjectID").ToString();
+                            data[i, 2] = ReflectionHelper.InvokeMethod(a, "IsAliveStatus") is bool alive && alive ? "Yes" : "No";
                         }
 
                         guiHelper.Table(headers, data, ControlVariant.Secondary);
@@ -821,9 +839,11 @@ namespace MimicAPI.TestMod
 
         void TestRoomAPI()
         {
+            object[] allRooms = null;
             try
             {
-                AddResult("RoomAPI.GetAllRooms", true, $"Count: {RoomAPI.GetAllRooms().Length}");
+                allRooms = RoomAPI.GetAllRooms();
+                AddResult("RoomAPI.GetAllRooms", true, $"Count: {allRooms.Length}");
             }
             catch (Exception ex)
             {
@@ -832,11 +852,12 @@ namespace MimicAPI.TestMod
 
             try
             {
-                AddResult("RoomAPI.GetCurrentRoom", true, RoomAPI.GetCurrentRoom() != null ? "Found" : "Null");
+                var ids = RoomAPI.GetAllRoomIDs();
+                AddResult("RoomAPI.GetAllRoomIDs", true, $"Count: {ids.Count}");
             }
             catch (Exception ex)
             {
-                AddResult("RoomAPI.GetCurrentRoom", false, ex.Message);
+                AddResult("RoomAPI.GetAllRoomIDs", false, ex.Message);
             }
 
             try
@@ -846,6 +867,192 @@ namespace MimicAPI.TestMod
             catch (Exception ex)
             {
                 AddResult("RoomAPI.GetAllPlayableRooms", false, ex.Message);
+            }
+
+            object room = null;
+            try
+            {
+                room = RoomAPI.GetCurrentRoom();
+                AddResult("RoomAPI.GetCurrentRoom", true, room != null ? "Found" : "Null (no player or no playable room)");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetCurrentRoom", false, ex.Message);
+            }
+
+            var testRoom = room ?? (allRooms?.Length > 0 ? allRooms[0] : null);
+
+            try
+            {
+                long id = RoomAPI.GetRoomID(testRoom);
+                AddResult("RoomAPI.GetRoomID", true, $"{id}");
+
+                if (testRoom != null)
+                {
+                    bool exists = RoomAPI.RoomExists(id);
+                    AddResult("RoomAPI.RoomExists", exists, $"ID {id}: {exists}");
+
+                    var found = RoomAPI.GetRoom(id);
+                    AddResult("RoomAPI.GetRoom", found != null, found != null ? RoomAPI.GetRoomName(found) : "null");
+                }
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetRoomID/RoomExists/GetRoom", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetRoomMasterID", true, $"{RoomAPI.GetRoomMasterID(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetRoomMasterID", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetRoomName", true, RoomAPI.GetRoomName(testRoom));
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetRoomName", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetRoomType", true, $"{RoomAPI.GetRoomType(testRoom) ?? "null"}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetRoomType", false, ex.Message);
+            }
+
+            try
+            {
+                var prop = RoomAPI.GetRoomProperty(testRoom);
+                AddResult("RoomAPI.GetRoomProperty", true, prop != null ? "Found" : "Null");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetRoomProperty", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.IsRoomPlayable", true, $"{RoomAPI.IsRoomPlayable(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.IsRoomPlayable", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetCurrentGameDay", true, $"{RoomAPI.GetCurrentGameDay(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetCurrentGameDay", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetCurrentSessionCycle", true, $"{RoomAPI.GetCurrentSessionCycle(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetCurrentSessionCycle", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetCurrentTick", true, $"{RoomAPI.GetCurrentTick(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetCurrentTick", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetMemberCount", true, $"{RoomAPI.GetMemberCount(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetMemberCount", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetDeadPlayerCount", true, $"{RoomAPI.GetDeadPlayerCount(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetDeadPlayerCount", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.IsAllPlayerDead", true, $"{RoomAPI.IsAllPlayerDead(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.IsAllPlayerDead", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.IsAllPlayerWastedOrDead", true, $"{RoomAPI.IsAllPlayerWastedOrDead(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.IsAllPlayerWastedOrDead", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetRoomPlayers", true, $"Count: {RoomAPI.GetRoomPlayers(testRoom).Count}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetRoomPlayers", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetRoomActors", true, $"Count: {RoomAPI.GetRoomActors(testRoom).Count}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetRoomActors", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetRoomLevelObjects", true, $"Count: {RoomAPI.GetRoomLevelObjects(testRoom).Count}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetRoomLevelObjects", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetRoomCurrency", true, $"{RoomAPI.GetRoomCurrency(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetRoomCurrency", false, ex.Message);
+            }
+
+            try
+            {
+                AddResult("RoomAPI.GetContaRecoveryRate", true, $"{RoomAPI.GetContaRecoveryRate(testRoom)}");
+            }
+            catch (Exception ex)
+            {
+                AddResult("RoomAPI.GetContaRecoveryRate", false, ex.Message);
             }
         }
 

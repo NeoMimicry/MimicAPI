@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,309 +8,128 @@ namespace MimicAPI.GameAPI
 {
     public static class ServerNetworkAPI
     {
-        private static object? _serverSocket = null;
-        private static Type? _serverSocketType = null;
-        private static Type? _ivroomType = null;
-        private static Type? _gameSessionInfoType = null;
-
-        public static object? GetServerSocket()
+        private static object? GetVWorld()
         {
-            if (_serverSocket != null)
-                return _serverSocket;
-
-            try
-            {
-                var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.Contains("FishySteamworks"));
-
-                if (assembly == null)
-                    return null;
-
-                _serverSocketType = assembly.GetTypes().FirstOrDefault(t => t.Name == "ServerSocket");
-
-                if (_serverSocketType == null)
-                    return null;
-
-                var instanceField = _serverSocketType.GetField("instance", BindingFlags.Public | BindingFlags.Static);
-                if (instanceField != null)
-                {
-                    _serverSocket = instanceField.GetValue(null);
-                    return _serverSocket;
-                }
-
-                var sField = _serverSocketType.GetField("s", BindingFlags.Public | BindingFlags.Static);
-                if (sField != null)
-                {
-                    _serverSocket = sField.GetValue(null);
-                    return _serverSocket;
-                }
-            }
-            catch { }
-
-            return null;
+            var hub = CoreAPI.GetHub();
+            if (hub == null)
+                return null;
+            return ReflectionHelper.GetFieldValue(hub, "<vworld>k__BackingField");
         }
+
+        private static object? GetSessionManager()
+        {
+            var vworld = GetVWorld();
+            if (vworld == null)
+                return null;
+            return ReflectionHelper.GetFieldValue(vworld, "_sessionManager");
+        }
+
+        public static object? GetRudpServer()
+        {
+            var vworld = GetVWorld();
+            if (vworld == null)
+                return null;
+            return ReflectionHelper.GetFieldValue(vworld, "_rudpServer");
+        }
+
+        public static object? GetSdrServer()
+        {
+            var vworld = GetVWorld();
+            if (vworld == null)
+                return null;
+            return ReflectionHelper.GetFieldValue(vworld, "_sdrServer");
+        }
+
+        public static object? GetServerSocket() => GetSdrServer() ?? GetRudpServer();
+
+        public static bool IsServerRunning() => GetVWorld() != null;
+
+        public static int GetSessionCount()
+        {
+            var sm = GetSessionManager();
+            if (sm == null)
+                return 0;
+            var contexts = ReflectionHelper.GetFieldValue(sm, "m_Contexts") as IDictionary;
+            return contexts?.Count ?? 0;
+        }
+
+        public static int GetCurrentClientCount() => GetSessionCount();
 
         public static int GetMaximumClients()
         {
-            object? socket = GetServerSocket();
-            if (socket == null)
+            var vrm = CoreAPI.GetVRoomManager();
+            if (vrm == null)
                 return 0;
-
-            object? result = ReflectionHelper.InvokeMethod(socket, "GetMaximumClients");
-            return result is int intValue ? intValue : 0;
+            return ReflectionHelper.InvokeMethod(vrm, "GetPlayerCountInSession") is int n ? n : 0;
         }
 
         public static void SetMaximumClients(object serverSocket, int value)
         {
-            if (serverSocket == null)
-                return;
             ReflectionHelper.SetFieldValue(serverSocket, "_maximumClients", value);
-        }
-
-        public static Type? GetIVroomType()
-        {
-            if (_ivroomType != null)
-                return _ivroomType;
-
-            var assembly = GetGameAssembly();
-            _ivroomType = assembly?.GetType("IVroom");
-            return _ivroomType;
-        }
-
-        public static Type? GetGameSessionInfoType()
-        {
-            if (_gameSessionInfoType != null)
-                return _gameSessionInfoType;
-
-            var assembly = GetGameAssembly();
-            _gameSessionInfoType = assembly?.GetType("GameSessionInfo");
-            return _gameSessionInfoType;
-        }
-
-        public static MethodBase? GetIVroomCanEnterChannel()
-        {
-            var ivroomType = GetIVroomType();
-            return ivroomType?.GetMethod("CanEnterChannel", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-        }
-
-        public static MethodBase? GetGameSessionInfoAddPlayerSteamID()
-        {
-            var type = GetGameSessionInfoType();
-            return type?.GetMethod("AddPlayerSteamID", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-        }
-
-        public static bool IsPlayerInRoom(object room, long playerUID)
-        {
-            var vPlayerDict = GetRoomPlayerDictionary(room);
-            if (vPlayerDict == null)
-                return false;
-
-            foreach (var player in vPlayerDict.Values)
-            {
-                var uid = ReflectionHelper.GetPropertyValue<long>(player, "UID");
-                if (uid == playerUID)
-                    return true;
-            }
-            return false;
-        }
-
-        public static int GetCurrentClientCount()
-        {
-            object? socket = GetServerSocket();
-            if (socket == null)
-                return 0;
-
-            object? result = ReflectionHelper.InvokeMethod(socket, "GetClientCount");
-            return result is int intValue ? intValue : 0;
-        }
-
-        public static bool IsServerRunning()
-        {
-            return GetServerSocket() != null;
-        }
-
-        public static object? GetVRoomManager()
-        {
-            return CoreAPI.GetVRoomManager();
-        }
-
-        public static object? GetWaitingRoom()
-        {
-            var roomManager = GetVRoomManager();
-            if (roomManager == null)
-                return null;
-
-            var vrooms = ReflectionHelper.GetFieldValue(roomManager, "_vrooms");
-            if (vrooms == null)
-                return null;
-
-            var vroomsDict = vrooms as IDictionary;
-            if (vroomsDict == null)
-                return null;
-
-            foreach (var room in vroomsDict.Values)
-            {
-                if (room.GetType().Name == "VWaitingRoom")
-                    return room;
-            }
-
-            return null;
-        }
-
-        public static object? GetMaintenanceRoom()
-        {
-            var roomManager = GetVRoomManager();
-            if (roomManager == null)
-                return null;
-
-            var vrooms = ReflectionHelper.GetFieldValue(roomManager, "_vrooms");
-            if (vrooms == null)
-                return null;
-
-            var vroomsDict = vrooms as IDictionary;
-            if (vroomsDict == null)
-                return null;
-
-            foreach (var room in vroomsDict.Values)
-            {
-                if (room.GetType().Name == "MaintenanceRoom")
-                    return room;
-            }
-
-            return null;
-        }
-
-        public static int GetWaitingRoomMemberCount()
-        {
-            object? waitingRoom = GetWaitingRoom();
-            if (waitingRoom == null)
-                return 0;
-
-            object? result = ReflectionHelper.InvokeMethod(waitingRoom, "GetMemberCount");
-            return result is int intValue ? intValue : 0;
-        }
-
-        public static int GetWaitingRoomMaxPlayers()
-        {
-            object? waitingRoom = GetWaitingRoom();
-            if (waitingRoom == null)
-                return 0;
-
-            return ReflectionHelper.GetFieldValue<int>(waitingRoom, "_maxPlayers");
-        }
-
-        public static int GetMaintenanceRoomMemberCount()
-        {
-            object? maintenanceRoom = GetMaintenanceRoom();
-            if (maintenanceRoom == null)
-                return 0;
-
-            object? result = ReflectionHelper.InvokeMethod(maintenanceRoom, "GetMemberCount");
-            return result is int intValue ? intValue : 0;
-        }
-
-        public static int GetMaintenanceRoomMaxPlayers()
-        {
-            object? maintenanceRoom = GetMaintenanceRoom();
-            if (maintenanceRoom == null)
-                return 0;
-
-            return ReflectionHelper.GetFieldValue<int>(maintenanceRoom, "_maxPlayers");
-        }
-
-        public static bool CanPlayerEnterWaitingRoom(long playerUID)
-        {
-            object? waitingRoom = GetWaitingRoom();
-            if (waitingRoom == null)
-                return false;
-
-            try
-            {
-                var result = ReflectionHelper.InvokeMethod(waitingRoom, "CanEnterChannel", playerUID);
-                if (result == null)
-                    return false;
-
-                var msgErrorCodeType = result.GetType();
-                if (msgErrorCodeType.IsEnum)
-                {
-                    string resultName = Enum.GetName(msgErrorCodeType, result);
-                    return resultName == "Success";
-                }
-
-                return false;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         public static List<object> GetAllConnectedPlayers()
         {
-            var result = new List<object>();
+            var sm = GetSessionManager();
+            if (sm == null)
+                return new List<object>();
 
-            try
-            {
-                object? socket = GetServerSocket();
-                if (socket == null)
-                    return result;
+            var contexts = ReflectionHelper.GetFieldValue(sm, "m_Contexts") as IDictionary;
+            if (contexts == null)
+                return new List<object>();
 
-                var connectionsField = socket.GetType().GetField("_connections", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (connectionsField == null)
-                    return result;
-
-                object? connections = connectionsField.GetValue(socket);
-                if (connections is IDictionary connDict)
-                {
-                    result.AddRange(connDict.Values.Cast<object>());
-                }
-            }
-            catch { }
-
-            return result;
+            return contexts.Values.Cast<object>().ToList();
         }
 
-        public static Type? GetMsgErrorCodeType()
+        public static object? GetWaitingRoom() => RoomAPI.GetAllRooms().FirstOrDefault(r => r?.GetType().Name == "VWaitingRoom");
+
+        public static object? GetMaintenanceRoom() => RoomAPI.GetAllRooms().FirstOrDefault(r => r?.GetType().Name == "MaintenanceRoom");
+
+        public static int GetWaitingRoomMemberCount() => RoomAPI.GetMemberCount(GetWaitingRoom());
+
+        public static int GetWaitingRoomMaxPlayers() => RoomAPI.GetMemberCount(GetWaitingRoom());
+
+        public static int GetMaintenanceRoomMemberCount() => RoomAPI.GetMemberCount(GetMaintenanceRoom());
+
+        public static int GetMaintenanceRoomMaxPlayers() => RoomAPI.GetMemberCount(GetMaintenanceRoom());
+
+        public static bool CanPlayerEnterWaitingRoom(long playerUID)
         {
+            var room = GetWaitingRoom();
+            if (room == null)
+                return false;
             try
             {
-                var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.Contains("FishySteamworks"));
-                if (assembly == null)
-                    return null;
-
-                return assembly.GetTypes().FirstOrDefault(t => t.Name == "MsgErrorCode");
+                var result = ReflectionHelper.InvokeMethod(room, "CanEnterChannel", playerUID);
+                if (result?.GetType().IsEnum == true)
+                    return Enum.GetName(result.GetType(), result) == "Success";
+                return false;
             }
             catch
             {
-                return null;
+                return false;
             }
         }
 
-        public static object? CreateErrorCodeEnum(string value)
+        public static bool IsPlayerInRoom(object room, long playerUID)
         {
-            var msgErrorCodeType = GetMsgErrorCodeType();
-            if (msgErrorCodeType == null || !msgErrorCodeType.IsEnum)
-                return null;
-
-            return Enum.Parse(msgErrorCodeType, value);
-        }
-
-        public static void SetRoomMaxPlayers(object? room, int maxPlayers)
-        {
-            if (room == null)
-                return;
-            ReflectionHelper.SetFieldValue(room, "_maxPlayers", maxPlayers);
+            var dict = GetRoomPlayerDictionary(room);
+            if (dict == null)
+                return false;
+            foreach (var player in dict.Values)
+            {
+                if (ReflectionHelper.GetPropertyValue<long>(player, "UID") == playerUID)
+                    return true;
+            }
+            return false;
         }
 
         public static int GetRoomPlayerCount(object? room)
         {
             if (room == null)
                 return 0;
-
-            var vPlayerDict = ReflectionHelper.GetFieldValue(room, "_vPlayerDict");
-            if (vPlayerDict is IDictionary dict)
-                return dict.Count;
-
-            return 0;
+            var dict = ReflectionHelper.GetFieldValue(room, "_vPlayerDict") as IDictionary;
+            return dict?.Count ?? 0;
         }
 
         public static IDictionary? GetRoomPlayerDictionary(object? room)
@@ -318,18 +137,6 @@ namespace MimicAPI.GameAPI
             if (room == null)
                 return null;
             return ReflectionHelper.GetFieldValue(room, "_vPlayerDict") as IDictionary;
-        }
-
-        public static Assembly? GetServerAssembly()
-        {
-            try
-            {
-                return AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.Contains("FishySteamworks"));
-            }
-            catch
-            {
-                return null;
-            }
         }
 
         public static Assembly? GetGameAssembly()
@@ -344,12 +151,8 @@ namespace MimicAPI.GameAPI
             }
         }
 
-        public static Type? GetServerSocketType()
-        {
-            var assembly = GetServerAssembly();
-            if (assembly == null)
-                return null;
-            return assembly.GetTypes().FirstOrDefault(t => t.Name == "ServerSocket");
-        }
+        public static Type? GetIVroomType() => GetGameAssembly()?.GetType("IVroom");
+
+        public static Type? GetGameSessionInfoType() => GetGameAssembly()?.GetType("GameSessionInfo");
     }
 }
