@@ -61,7 +61,7 @@ namespace MimicAPI.GameAPI
 
         public static object? GetCurrentRoom()
         {
-            return GetAllRooms().FirstOrDefault(r => r != null && IsRoomPlayable(r));
+            return PlayerAPI.GetServerActor(PlayerAPI.GetLocalPlayer())?.VRoom;
         }
 
         public static List<object> GetAllPlayableRooms() => GetAllRooms().Where(r => r != null && IsRoomPlayable(r)).ToList();

@@ -12,7 +12,8 @@ namespace MimicAPI.GameAPI
     {
         public static ProtoActor? GetLocalPlayer()
         {
-            return FindActorWhere(a => a.AmIAvatar());
+            var main = CoreAPI.GetPersistentData()?.main;
+            return main != null ? main.GetMyAvatar() : null;
         }
 
         public static ProtoActor[]? GetAllPlayers()
@@ -47,24 +48,33 @@ namespace MimicAPI.GameAPI
 
         public static StatManager? GetLocalStatManager()
         {
-            ProtoActor? player = GetLocalPlayer();
-            return player?.GetComponent<StatManager>();
+            return GetStatManager(GetLocalPlayer());
         }
 
         public static StatManager? GetStatManager(ProtoActor? actor)
         {
-            return actor?.GetComponent<StatManager>();
+            var controller = GetServerActor(actor)?.StatControlUnit;
+            return controller == null ? null : ReflectionHelper.GetFieldValue<StatManager>(controller, "StatManager");
         }
 
         public static MovementController? GetLocalMovementController()
         {
-            ProtoActor? player = GetLocalPlayer();
-            return player?.GetComponent<MovementController>();
+            return GetMovementController(GetLocalPlayer());
         }
 
         public static MovementController? GetMovementController(ProtoActor? actor)
         {
-            return actor?.GetComponent<MovementController>();
+            return GetServerActor(actor)?.MovementControlUnit;
+        }
+
+        // These controllers belong to the host's server actor, not to a Unity component.
+        internal static VActor? GetServerActor(ProtoActor? actor)
+        {
+            if (actor == null)
+                return null;
+            var room = CoreAPI.GetVRoomManager()?.FindRoomByActorObjectID(actor.ActorID);
+            var serverActor = room?.FindActorByObjectID(actor.ActorID);
+            return serverActor?.UID == actor.UID ? serverActor : null;
         }
 
         public static object? GetLocalInventory()
@@ -163,28 +173,13 @@ namespace MimicAPI.GameAPI
 
         private static ProtoActor? FindActorWhere(Func<ProtoActor, bool> predicate)
         {
-            try
-            {
-                ProtoActor[] allActors = UnityEngine.Object.FindObjectsByType<ProtoActor>(FindObjectsSortMode.None);
-                return allActors.FirstOrDefault(predicate);
-            }
-            catch
-            {
-                return null;
-            }
+            return FindActorsWhere(predicate).FirstOrDefault();
         }
 
-        private static ProtoActor[]? FindActorsWhere(Func<ProtoActor, bool> predicate)
+        private static ProtoActor[] FindActorsWhere(Func<ProtoActor, bool> predicate)
         {
-            try
-            {
-                ProtoActor[] allActors = UnityEngine.Object.FindObjectsByType<ProtoActor>(FindObjectsSortMode.None);
-                return allActors.Where(predicate).ToArray();
-            }
-            catch
-            {
-                return new ProtoActor[0];
-            }
+            var main = CoreAPI.GetPersistentData()?.main;
+            return main == null ? Array.Empty<ProtoActor>() : main.GetAllPlayers().Where(predicate).ToArray();
         }
     }
 }

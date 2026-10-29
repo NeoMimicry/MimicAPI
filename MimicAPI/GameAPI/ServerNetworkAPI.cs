@@ -87,11 +87,16 @@ namespace MimicAPI.GameAPI
 
         public static int GetWaitingRoomMemberCount() => RoomAPI.GetMemberCount(GetWaitingRoom());
 
-        public static int GetWaitingRoomMaxPlayers() => RoomAPI.GetMemberCount(GetWaitingRoom());
+        public static int GetWaitingRoomMaxPlayers() => GetRoomCapacity(GetWaitingRoom());
 
         public static int GetMaintenanceRoomMemberCount() => RoomAPI.GetMemberCount(GetMaintenanceRoom());
 
-        public static int GetMaintenanceRoomMaxPlayers() => RoomAPI.GetMemberCount(GetMaintenanceRoom());
+        public static int GetMaintenanceRoomMaxPlayers() => GetRoomCapacity(GetMaintenanceRoom());
+
+        private static int GetRoomCapacity(object? room)
+        {
+            return room == null ? 0 : ManagerAPI.GetDataManager()?.ExcelDataManager?.Consts.C_MaxPlayerCount ?? 0;
+        }
 
         public static bool CanPlayerEnterWaitingRoom(long playerUID)
         {
